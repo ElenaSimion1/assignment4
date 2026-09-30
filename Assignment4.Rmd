@@ -3,14 +3,17 @@ title: "Assignment3"
 author: "Elena Simion"
 date: "2026-09-27"
 output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: true
+    toc_depth: 2
+    theme: cosmo
+    highlighter: tango
+    number_sections: true
   pdf_document:
     toc: false
     number_sections: true
-  html_document:
-    toc: false
-    toc_float: true
-    toc_depth: '3'
-    df_print: paged
 fontsize: 12pt
 ---
 
@@ -37,7 +40,7 @@ In this following section, we will first reproduce two figures using the cleaned
 \textcolor{red}{{\bf NOTE:}}
 It was necessary to filter the data and keep only the information of participants 21 years and older. This selection is kept in all following sections using data from cleaned_NHANES.
 
-## Reproduced figures
+## Reproduced figures {.tabset}
 
 ### First figure: age vs sex
 ```{r ex1 fig1, echo = FALSE, fig.show="hold", out.width="80%"}
@@ -77,7 +80,7 @@ f_two <- ggplot(data = filtered_adult,
 f_two
 ```
 
-## Combining figures in a single output
+## Combining figures in a single output {.tabset}
 With these two figures, we will compare plot_grid() and ggarrange() function by combining both figures in a single output using each function. 
 The two plots are below this section.
 
@@ -120,10 +123,21 @@ grid2
 
 
 # Visualizing key characteristics
-In this second exercise, we will focus on creating appropriate plots to maximize the representation of key characteristics that we want to convey.
+In this second exercise, we will focus on creating appropriate plots to maximize the representation of key characteristics that we want to convey. We will be using once more the NHANES data, displayed below:
+```{r datatable, echo = FALSE, warning = FALSE}
+library(DT)
+
+datatable(
+  cleaned_NHANES,
+  # enable horizontal scrolling
+  options = list(scrollX = TRUE)
+)
+```
+
 
 ## Four plots
 Below are four plots created to bring a visual representation of important variables in our data. They are each explained and analysed afterwards. 
+
 
 ```{r ex2 age plot, echo = FALSE}
 age_plot <- ggplot(data = filtered_adult, aes(x = age)) +
@@ -324,7 +338,7 @@ Drawbacks:
 
 * The amount of participants weight change, if there is any, could have been more emphasized. However, when I tried to show a weight change value, I couldn't integrate the multiple variables that we want to show (such as original weight, final weight, participant id) without clustering.
 
-* In a different figure, I presented participants by weight change (gained, lost, maintained) and I noticed 3 trends : small weight gain, vs big weight loss, vs maintained weight. These trends would have been interesting to be presented depending on what the diet data actually means (it could have been comparison between study groups). However, I chose not to categorize participants by weight progression to ease the figure's reading based on the idea that we want to quickly find one participant at a time.
+* In a different figure, I presented participants by weight change (gained, lost, maintained) and I noticed 3 trends : small weight gain, vs big weight loss, vs maintained weight. These trends would have been interesting to be presented depending on what the diet data actually means (it could have been a comparison between study groups). However, I chose not to categorize participants by weight progression to ease the figure's reading based on the idea that we want to quickly find one participant at a time.
 
 
 # Exploring relationship through visualizations
@@ -334,7 +348,7 @@ The purpose of this last section is to explore the relationship between age, gen
 
 
 
-## Preparing data for later presentation
+## Preparing data: Relationships between variables
 
 To explore the relationship between variables in our data, we begin by organizing and setting up our wanted variables. Age and gender variables are already suited for visualization, we will therefore prepare SBP data.
 
@@ -404,7 +418,7 @@ complete_dataset <- complete_dataset %>%
 
 ```
 
-## Sample visual description
+### Sample visual description
 
 With our selected data now ready, we can describe the distribution of various variables in our final sample and if needed, compare it with the original sample size. We keep in mind that our original cleaned_NHANES data (excluding participants younger than 21 years old) can be significantly larger than our selected data due to rows with missing data. 
 
@@ -480,7 +494,7 @@ all_selected
 ```
 Despite the selection made, we see above that there hasn't been any preferential selection due to missing data. There seems to have been only a diminution in data size. This is a very good sign, meaning that our selected data presents a wide variety of subjects and will permit a proper investigation on the relationships between average SBP and various variables such as age or gender.
 
-# Relationships between variables
+## Visual: Relationships between variables
 
 
 ```{r ex 4 step5, echo = FALSE}
@@ -504,17 +518,17 @@ ggplot(complete_dataset, aes(x = age_cat, fill = age_cat)) +
 
 Following this facet grid, we can notice multiple aspects of the relationship between hypertension categories and sex and age.
 
-## Hypertension categories in relationship with age 
+### Hypertension categories in relationship with age 
 
 Concerning the number of individuals from each age category, we notice that all but age category "60 +" decrease after each hypertension category, in both male and female. Indeed, the number of individuals in  age category "60 +", for both male and female, seem to remain almost similar for the first three hypertension categories, but almost double once in the "Stage 2 hypertension" category.
 We can infer that individuals over 60 years old might be more susceptible to have "Stage 2 hypertension" than younger individuals.
 
-## Hypertension categories in relationship with sex
+### Hypertension categories in relationship with sex
 
 Concerning the number of individuals from both sexes, we notice that females, contrarily to males, seem to have a higher total number in the "Normal" category. However, we also notice that there seem to be, in total, more females in the "Stage 2 hypertension" category than males.
 We can infer that females have more contrasted hypertension symptoms than males.
 
-## Overall differences in variables in relationship with hypertension categories
+### Overall differences in variables in relationship with hypertension categories
 
 Finally, we notice than between males vs females and age categories, there are practically no differences in both "Elevated" and 'Stage 1 hypertension" grids. The largest differences are found comparing the two "Normal" blood pressure grids, in addition to slight difference in individual numbers in the two "Stage 2 hypertension" grids.
 
