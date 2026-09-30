@@ -1,0 +1,521 @@
+---
+title: "Assignment3"
+author: "Elena Simion"
+date: "2026-09-27"
+output:
+  pdf_document:
+    toc: false
+    number_sections: true
+  html_document:
+    toc: false
+    toc_float: true
+    toc_depth: '3'
+    df_print: paged
+fontsize: 12pt
+---
+
+# Overview and set-up
+In this week's assignment we will use the same NHANES data (provided as cleaned_NHANES.csv) and a new diet data (diet.csv). The exercises will revolve around presenting a visual understanding of our data.
+
+## Package loading and data importing
+The following code is used to load necessary packages and import the data used.
+
+```{r necessary load and import, warning = FALSE, message = FALSE}
+library(pacman)
+p_load(rio, here, tidyverse,
+       ggrepel, ggplot2, cowplot, ggpubr)
+
+#data for exercises 1 and 2
+cleaned_NHANES <- import(here("Data", "cleaned_NHANES.csv"))
+
+#data for exercise 3
+diet_data <- import(here("Data", "diet.csv"))
+```
+
+# Reproducing and arranging ggplot figures
+In this following section, we will first reproduce two figures using the cleaned_NHANES data. 
+\textcolor{red}{{\bf NOTE:}}
+It was necessary to filter the data and keep only the information of participants 21 years and older. This selection is kept in all following sections using data from cleaned_NHANES.
+
+## Reproduced figures
+
+### First figure: age vs sex
+```{r ex1 fig1, echo = FALSE, fig.show="hold", out.width="80%"}
+filtered_adult <- cleaned_NHANES %>% filter(age >= 21)
+filtered_adult$gender <- factor(filtered_adult$gender, 
+                        levels = c("Male", "Female"))
+f_one <- ggplot(data = filtered_adult, 
+    aes(x = age, fill = gender)) +
+  geom_histogram(binwidth = 5, position = "dodge") +
+  labs(
+    x = "Age (in years at screening)",
+    y = "Number of individuals",
+    title = "Age distribution of both sexes",
+    fill = "Sex"
+  )
+f_one
+```
+
+### Second figure: ethnicity vs sex
+```{r ex1 fig2, echo = FALSE, fig.show="hold", out.width="80%"}
+
+filtered_adult$ethnicity_2 <- factor(filtered_adult$ethnicity_2,
+                levels = c("Mexican",
+                           "Other Hispanic", 
+                           "White",
+                           "Black", "Asian",
+                           "Other"))
+f_two <- ggplot(data = filtered_adult, 
+       aes(x = ethnicity_2, fill = gender)) +
+  geom_bar(position = "fill") +
+  labs(
+    x = "Ethnicity group",
+    y = "Proportion of individuals",
+    title = "Sex proportions for each ethnicity group",
+    fill = "Sex"
+  )
+f_two
+```
+
+## Combining figures in a single output
+With these two figures, we will compare plot_grid() and ggarrange() function by combining both figures in a single output using each function. 
+The two plots are below this section.
+
+In comparison, these two functions do very similar results but have each their strengths and weaknesses:
+
+* plot arrangement: plot_grid() allows precisely organized plots in a common space, with easy access to change labels and legends. Great for complex plot combinations.
+
+* unification : ggarrange() allows a quick fusion between plots, especially if they have common legends (as in our case) thanks to common.legend argument.
+
+I find that using ggarrange() function is best in this case. We are not expecting a complex arrangement of our figures and we have a common legend that can be unified with ggarrange().
+
+### Using plot_grid()
+```{r ex1 grid1, echo = FALSE}
+
+grid1 <- plot_grid(
+  f_one, f_two,
+  rel_heights = c(1, 1), nrow = 2, ncol = 1
+)
+grid1
+
+
+```
+
+### Using ggarrange()
+```{r ex1 grid2, echo = FALSE}
+#rearranging title width for both plots
+f_one <- f_one + labs(title = str_wrap("Age distribution of both sexes", width = 30))
+
+f_two <- f_two + 
+  labs(title = str_wrap("Sex proportions for each ethnicity group", width = 30)) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+# creating second grid with ggarrange()
+grid2 <- ggarrange(
+  f_one, f_two,
+  common.legend = TRUE, legend = "top"
+)
+grid2
+```
+
+
+# Visualizing key characteristics
+In this second exercise, we will focus on creating appropriate plots to maximize the representation of key characteristics that we want to convey.
+
+## Four plots
+Below are four plots created to bring a visual representation of important variables in our data. They are each explained and analysed afterwards. 
+
+```{r ex2 age plot, echo = FALSE}
+age_plot <- ggplot(data = filtered_adult, aes(x = age)) +
+  geom_histogram(binwidth = 5, fill = "lightgreen", color = "black") +
+  labs(
+  x = "Age (in years at screening)",
+  y = "Count of individuals",
+  title = "Age distribution"
+) 
+
+ggsave(
+  filename = "age_plot.png",
+  plot = age_plot,
+  path = here("Figures"),
+  width = 8,
+  height = 6
+  )
+```
+
+```{r ex 2 sex plot, echo = FALSE}
+sex_plot <- ggplot(data = filtered_adult, aes(x = gender,
+                                  fill = gender)) +
+  geom_bar() +
+  labs(
+  x = "Sex",
+  y = "Count of individuals",
+  title = "Gender distribution"
+) + 
+  scale_fill_manual(
+    values = c("Male" = "lightblue", 
+               "Female" = "lightpink"))
+
+ggsave(
+  filename = "sex_plot.png",
+  plot = sex_plot,
+  path = here("Figures"),
+  width = 8,
+  height = 6
+  )
+  
+```
+
+
+```{r ex2 ethnicity1 plot, echo = FALSE}
+ethnicity1_plot <- ggplot(data = filtered_adult, 
+                       aes(y = fct_infreq(ethnicity_1),
+                           fill = ethnicity_1)) +
+  geom_bar() +
+  labs(
+  x = "Count of individuals",
+  y = "Ethnicity group",
+  title = str_wrap("Ethnicity distribution without 'Asian' category", width = 25)
+) +
+  scale_fill_manual(
+    values = c("Mexican" = "blue",
+               "Other Hispanic" = "green",
+               "White" = "pink",
+               "Black" = "brown",
+               "Other" = "yellow"
+                           )) +
+  theme(legend.position = "none")
+
+ggsave(
+  filename = "ethnicity1_plot.png",
+  plot = ethnicity1_plot,
+  path = here("Figures"),
+  width = 8,
+  height = 6
+  )
+```
+
+```{r  ex2 ethnicity2 plot, echo = FALSE}
+ethnicity2_plot <- ggplot(data = filtered_adult, 
+                    aes(y = fct_infreq(ethnicity_2),
+                        fill = ethnicity_2)) +
+  geom_bar() +
+  labs(
+  x = "Count of individuals",
+  y = "Ethnicity group",
+  title = str_wrap("Ethnicity distribution with 'Asian' category", width = 25)
+) +
+  scale_fill_manual(
+    values = c("Mexican" = "blue",
+               "Other Hispanic" = "green",
+               "White" = "pink",
+               "Black" = "brown",
+               "Other" = "yellow",
+               "Asian" = "orange"
+                           )) +
+  theme(legend.position = "none")
+
+ggsave(
+  filename = "ethnicity2_plot.png",
+  plot = ethnicity2_plot,
+  path = here("Figures"),
+  width = 8,
+  height = 6
+  )
+```
+
+
+```{r ex 2 all four plots grid}
+
+all_four <- ggarrange(age_plot, sex_plot, ethnicity1_plot, ethnicity2_plot)
+all_four
+```
+When checking for missing values in the variables we used, no missing value is found. Here is the code used to find missing values:
+```{r ex2 missing values check, eval = FALSE}
+#check for missing values
+sum(is.na(filtered_adult$age))
+sum(is.na(filtered_adult$sex))
+sum(is.na(filtered_adult$ethnicity_1))
+sum(is.na(filtered_adult$ethnicity_2))
+
+```
+
+## Comments
+For each of these plots, we can briefly describe their distributions:
+
+* Age plot: we notice that between the ages of 25 to 60 years old, there are about the same number of individuals per age. After 60, there is a continuous decrease until the age of 80. We observe a smaller number of individuals between ages of 20 to 25, because of the selection of 21 and older.
+
+* Sex plot: we notice that there are more females than males in our data pool. However, the difference does not look very significant and can be traced to various social factors.
+
+* Ethnicity plots: with both of our ethnicity plots, we notice a larger number of white ethnic individuals, followed by an large yet smaller number of black ethnic individuals. This reflects American ethnicity proportions. In both plots we find the same number of Mexican and other Hispanic ethnic individuals. 
+
+* The difference between the two ethnicity plots comes from the separation of Asians from the "Other" category. We see that in the second plot there are fewer numbers of "Other", than in the first plot, which corresponds to the numbers in the "Asian" category.
+
+```{r removing ethnicity1, echo = FALSE}
+filtered_adult <- filtered_adult %>%
+  select(-ethnicity_1)
+```
+
+
+## Choice of ethnicity variable
+I find that keeping the second ethnicity variable (ethnicity2) is more interesting because it provides us with a wider understanding of our data, instead of keeping variables in a unclear, "Other", category. Though too much information can eventually complicate figure readability, I find that in our case, adding this one detail would allow a more revealing data analysis.
+
+# Improving ggplot figure
+Here, we will improve a figure that uses the diet data. It is meant to show weight progression of 20 individuals, after 16 weeks.
+
+## Analysis provided figure
+In the figure given in exercise 3, many aspects can be subject to improvement:
+
+* Title: there is no main title to the figure, and there is no precision of the measurement system used to track the weights. Without these information we could believe that the figure was used to measure weight progression on smaller animals weighted in pounds (eg. dogs). Adding a main title and changing the axis title are easy and quick fixes that can instantly improve a figure.
+
+* Color use: though the use of colors can help with distinguishing groups, in this case, there are too many items to keep track of using only color. In addition to this, the rainbow color scale does not allow an easy distinction between individuals that are close in number id (eg. 10, 11, 12). I would chose to use colors only to add information, such as categorizing the evolution of the subjects' weight (eg. separating colors according to those who have gained weight, lost weight, or maintained their weight).
+
+* Grid: the grid used in the figure is too wide and does not permit an accurate reading of weight values. Since we want to highlight the weight progression, being able to clearly see a before vs after value is very important. I would change the grid to allow a more precise reading of the weight values.
+
+* Cluster: the figure is very clustered given the number of subjects who's weights are tracked. To ease the reading of the figure, I would probably categorize the subjects who have gained, lost, or maintained weight to organize the observations throughout time. 
+
+## Improved figure
+
+The following figure allows an easier reading of the weight change in participant after 16 weeks. There are a few drawbacks explained below the figure, but none affect the intended message of the figure. 
+
+```{r ex 3 all code, echo = FALSE}
+#separating weight change
+filter_week0 <- diet_data %>% filter(Week == 0)
+filter_week16 <- diet_data %>% filter(Week == 16)
+  
+# making a weight change category
+weight_change <-
+  left_join(filter_week0, filter_week16,
+    by = "Participant")
+weight_change <- weight_change %>%
+  mutate(
+    Weight_Change = Weight.y - Weight.x
+  )
+
+# Orientation
+weight_change_long <- weight_change %>%
+  pivot_longer(
+    cols = c(Weight.x, Weight.y),
+    names_to = "Time",
+    values_to = "Weight"
+  ) %>%
+  mutate(Time = recode(Time, "Weight.x" = "Before", "Weight.y" = "After"), Time = factor(Time, levels = c("Before", "After")))
+
+
+# creating the figure
+
+ggplot(data = weight_change_long, aes(x = factor(Participant), y = Weight, fill = Time)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  labs(
+    x = "Participant numbers",
+    y = "Weight (kg)",
+    title = "Weight change in kg per participant after 16 weeks"
+  ) +
+  scale_y_continuous(breaks = seq(0, 110 , 10), minor_breaks = seq(25, 110 , 1)) +
+  theme(panel.grid.major = element_line(color = "pink",
+                                        linewidth = 0.5,
+                                        linetype = 2))
+
+```
+
+Drawbacks:
+
+* We do not see the evolution shape of weight loss or weight gain. However, in all participants, if there is an evolution in their weight, this evolution is always linear. Therefore seeing how the evolution happened isn't of much interest.
+
+* The amount of participants weight change, if there is any, could have been more emphasized. However, when I tried to show a weight change value, I couldn't integrate the multiple variables that we want to show (such as original weight, final weight, participant id) without clustering.
+
+* In a different figure, I presented participants by weight change (gained, lost, maintained) and I noticed 3 trends : small weight gain, vs big weight loss, vs maintained weight. These trends would have been interesting to be presented depending on what the diet data actually means (it could have been comparison between study groups). However, I chose not to categorize participants by weight progression to ease the figure's reading based on the idea that we want to quickly find one participant at a time.
+
+
+# Exploring relationship through visualizations
+
+The purpose of this last section is to explore the relationship between age, gender, and systolic blood pressure (SBP) while balancing text and visualization.
+
+
+
+
+## Preparing data for later presentation
+
+To explore the relationship between variables in our data, we begin by organizing and setting up our wanted variables. Age and gender variables are already suited for visualization, we will therefore prepare SBP data.
+
+### SBP data manipulation
+
+In our main cleaned_NHANES data, we have four readings of SBP. To ease presentation and understanding of these readings, we will go through three following steps :
+  
+  * First: create an average SPB variable for each individuals (leaving a missing value only if all four SBP readings are missing)
+
+
+```{r ex 4 step1, echo = FALSE}
+
+
+#creating one dataframe with all sth SBP values 
+SBP_df <- data.frame (
+  SBP1 = filtered_adult$systolic_bp_1,
+  SBP2 = filtered_adult$systolic_bp_2,
+  SBP3 = filtered_adult$systolic_bp_3,
+  SBP4 = filtered_adult$systolic_bp_4
+)
+
+# making a SBP average, despite NA missing data
+SBP_average <- rowMeans(SBP_df, na.rm = TRUE)
+
+filtered_adult_mean <- filtered_adult %>%
+  mutate(
+    SBP_average = SBP_average
+  )
+# Set SBP_mean to NA if all 4 values are missing
+filtered_adult_mean$SBP_average[
+  is.nan(filtered_adult_mean$SBP_average)] <- NA
+```
+
+  * Second: make a separate dataset that includes only individuals that have all values for age, gender, and average SBP.
+
+
+
+```{r ex 4 step2, echo = FALSE}
+
+complete_dataset <- filtered_adult_mean %>%
+  filter(
+    complete.cases(select(., age, 
+                          gender, 
+                          SBP_average))
+  )
+
+
+```
+
+  * Last: classify SBP values into categories that explain average SBP value.
+
+```{r ex 4 step3, echo = FALSE}
+
+complete_dataset <- complete_dataset %>%
+  mutate(
+    SBP_cat = 
+      case_when(
+    SBP_average < 120                   ~ "Normal",
+    SBP_average >= 120 &
+      SBP_average < 130 ~ "Elevated",
+    SBP_average >= 130 &
+      SBP_average < 140 ~ "Stage 1 hypertension",
+    SBP_average >= 140                  ~ "Stage 2 hypertension"
+  )
+)
+
+
+```
+
+## Sample visual description
+
+With our selected data now ready, we can describe the distribution of various variables in our final sample and if needed, compare it with the original sample size. We keep in mind that our original cleaned_NHANES data (excluding participants younger than 21 years old) can be significantly larger than our selected data due to rows with missing data. 
+
+Below, we will find the distribution in hypertension categories, the distribution in gender, and the comparison of age distribution between our original data and our selected data. 
+
+
+
+```{r ex 4 step4, echo = FALSE}
+
+complete_dataset <- complete_dataset %>%
+  mutate (SBP_cat = factor(SBP_cat,
+                   levels = c("Normal", "Elevated",
+                           "Stage 1 hypertension",
+                           "Stage 2 hypertension")))
+
+
+hyp_ten_cat_plot <- ggplot(data = complete_dataset,
+                           aes(y = factor(SBP_cat), fill = SBP_cat)) +
+  geom_bar() +
+  labs(
+    x = "Number of individuals",
+    y = "Hypertension category",
+    title = str_wrap("Distribution in hypertension categories", width = 25)
+  ) +
+  scale_fill_brewer(palette = "YlOrRd") +
+  theme(legend.position = "none", 
+        panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_line(color = "darkgrey"),
+        panel.grid.minor.x = element_line(color = "grey"),
+        plot.title = element_text(size = 12)
+      )
+
+```
+
+
+
+```{r ex 4 step4 age plot, echo = FALSE}
+age_plot_selected <- ggplot(data = complete_dataset, aes(x = age)) +
+  geom_histogram(binwidth = 5, fill = "lightgreen", color = "black") +
+  labs(
+  x = "Age (in years at screening)",
+  y = "Count of individuals",
+  title = str_wrap("Age distribution in selected data", width = 25)
+  ) +
+  theme(plot.title = element_text(size = 12))
+```
+
+
+```{r ex 4 step4 sex plot, echo = FALSE}
+sex_plot_selected <- ggplot(data = complete_dataset, aes(x = gender,
+                                  fill = gender)) +
+  geom_bar() +
+  labs(
+  x = "Sex",
+  y = "Count of individuals",
+  title = str_wrap("Gender distribution in selected data", width = 25)
+) + 
+  scale_fill_manual(
+    values = c("Male" = "lightblue", 
+               "Female" = "lightpink")) +
+  theme(plot.title = element_text(size = 12))
+
+```
+
+
+
+```{r ex 4 step4 all plots grid, echo = FALSE}
+age_plot <- age_plot + labs(title = str_wrap("Gender distribution in original data", width = 25)) +   theme(plot.title = element_text(size = 12))
+
+all_selected <- ggarrange(hyp_ten_cat_plot, sex_plot_selected, age_plot_selected, age_plot)
+all_selected
+```
+Despite the selection made, we see above that there hasn't been any preferential selection due to missing data. There seems to have been only a diminution in data size. This is a very good sign, meaning that our selected data presents a wide variety of subjects and will permit a proper investigation on the relationships between average SBP and various variables such as age or gender.
+
+# Relationships between variables
+
+
+```{r ex 4 step5, echo = FALSE}
+ggplot(complete_dataset, aes(x = age_cat, fill = age_cat)) +
+  geom_bar() +
+  facet_grid(
+    gender ~ SBP_cat
+  ) +
+  labs(
+    x = "Age categories",
+    y = "Number of individuals",
+    fill = "Age categories (in years)",
+    title = "Relationship between hypertension categories vs age and gender."
+  ) +
+  scale_fill_brewer(palette = "Set1", labels = c("18-24" = "21-24")) +
+  scale_x_discrete(labels = c("18-24" = "21-24")) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        legend.position = "bottom")
+  
+```
+
+Following this facet grid, we can notice multiple aspects of the relationship between hypertension categories and sex and age.
+
+## Hypertension categories in relationship with age 
+
+Concerning the number of individuals from each age category, we notice that all but age category "60 +" decrease after each hypertension category, in both male and female. Indeed, the number of individuals in  age category "60 +", for both male and female, seem to remain almost similar for the first three hypertension categories, but almost double once in the "Stage 2 hypertension" category.
+We can infer that individuals over 60 years old might be more susceptible to have "Stage 2 hypertension" than younger individuals.
+
+## Hypertension categories in relationship with sex
+
+Concerning the number of individuals from both sexes, we notice that females, contrarily to males, seem to have a higher total number in the "Normal" category. However, we also notice that there seem to be, in total, more females in the "Stage 2 hypertension" category than males.
+We can infer that females have more contrasted hypertension symptoms than males.
+
+## Overall differences in variables in relationship with hypertension categories
+
+Finally, we notice than between males vs females and age categories, there are practically no differences in both "Elevated" and 'Stage 1 hypertension" grids. The largest differences are found comparing the two "Normal" blood pressure grids, in addition to slight difference in individual numbers in the two "Stage 2 hypertension" grids.
+
+End
