@@ -1,0 +1,82 @@
+---
+title: "NHANES Dashboard"
+output: 
+    flexdashboard::flex_dashboard: 
+        orientation: rows
+        
+---
+
+Below are all the packages and data needed for this exercise:
+
+```{r load and import}
+library(pacman)
+pacman::p_load(rio, here, flexdashboard,
+       tidyverse,ggrepel, ggplot2,
+       DT, knitr, png)
+
+#data
+cleaned_NHANES <- import(here("Data", "cleaned_NHANES.csv"))
+
+
+```
+
+# Setting up charts
+
+    
+Row {data-height=650}
+-------------------------------------
+
+### Age distribution figure.
+
+```{r figure}
+include_graphics(here("Figures", "age_plot.png"))
+```
+
+Row {data-height=350}
+-------------------------------------
+   
+### Gauge indicating percentage of individuals 21 years or older.
+
+```{r gauge, echo = FALSE}
+# calculating percentage of individuals 21 years or older
+percent_adults <- mean(cleaned_NHANES$age >= 21, na.rm = TRUE) * 100
+gauge(percent_adults, min = 0, max = 100, symbol = '%', 
+        gaugeSectors(
+        success = c(0, 100), color = "steelblue"
+          )
+    )
+```   
+
+
+### ValueBox indicating percentage of individuals with average SBP > 120mm Hg.
+
+```{r valueBox, echo = FALSE}
+# Recreating average SBP
+
+## creating one dataframe with all SBP values 
+SBP_df <- data.frame (
+  SBP1 = cleaned_NHANES$systolic_bp_1,
+  SBP2 = cleaned_NHANES$systolic_bp_2,
+  SBP3 = cleaned_NHANES$systolic_bp_3,
+  SBP4 = cleaned_NHANES$systolic_bp_4
+)
+
+## making a SBP average, despite NA missing data
+SBP_average <- rowMeans(SBP_df, na.rm = TRUE)
+
+cleaned_NHANES <- cleaned_NHANES %>%
+  mutate(
+    SBP_average = SBP_average
+  )
+## Set SBP_mean to NA if all 4 values are missing
+cleaned_NHANES$SBP_average[
+  is.nan(cleaned_NHANES$SBP_average)] <- NA
+
+## calculating percentage of individuals with SBP > 120 mm Hg
+percent_high_avg_SBP <- mean(
+  cleaned_NHANES$SBP_average >= 120, na.rm = TRUE) * 100
+percent_high_avg_SBP <- round(percent_high_avg_SBP, digits = 2)
+
+# creating value box with percentage above
+valueBox(percent_high_avg_SBP)
+```   
