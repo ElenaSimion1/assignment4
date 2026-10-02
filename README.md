@@ -14,7 +14,7 @@ Figures: 4 saved figures from previous assignment (As.3, ex.2)
 
 Assignment files:
 
-Ex2: Assignment4.html and .Rdm and .pdf 
+Ex2: Assignment4.html and .Rdm and .pdf (Note: the commit message says Ex1, but it is in fact Ex2. My mistake).
 
 Ex3: Assignment4_dashboard.html and .Rdm
 
