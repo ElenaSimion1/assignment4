@@ -1,0 +1,164 @@
+---
+title: "Assignment 4 - Report"
+author: "Elena Simion"
+date: "2026-10-02"
+output:
+  pdf_document:
+    toc: false
+    number_sections: true
+bibliography: references.bib
+fontsize: 12pt
+---
+
+# About NHANES dataset
+Throughout our past assignments, we have regularly used a cleaned_NHANES dataset. This dataset was selected from *The National Health and Nutrition Examination Survey* (NHANES) data. It includes the blood pressure data and demographic data collected during three NHANES survey cycles: 
+
+* 2013-2014: [@nhanes_2013_2014]
+* 2015-2016: [@nhanes_2015_2016]
+* 2017-2018: [@nhanes_2017_2018]
+
+This dataset has been cleaned and is provided as "cleaned_NHANES.csv". It contains 29,400 observations and has 21 different variables (some in character and others in integers).
+
+Below, we will follow through a brief description of a couple of variables from the dataset, presented into two tables. The required packages and data are loaded and imported  as such:
+
+
+## Load packages and data import
+```{r package and data}
+library(pacman)
+pacman::p_load(rio, here, dplyr, gtsummary,
+               forcats, kableExtra)
+
+# Data import
+cleaned_NHANES <- import(here("Data", "cleaned_NHANES.csv"))
+```
+
+# Data description
+
+As mentioned previously about the selected data from NHANES, we worked on data from 3 survey cycles. We will therefore be comparing between survey cycles (also called waves) different statistical information for a couple of variables.
+
+In the first table, seen below, we have compared for each wave ID, the numbers and percentage of males, and of ethnicity category.
+
+## General statsitical overview per wave for sex and ethnicity variables
+
+```{r table1, echo = FALSE}
+
+variables_table <- cleaned_NHANES %>%
+  mutate(ethnicity_2 = fct_infreq(ethnicity_2)) %>%
+  select(wave_id, gender, ethnicity_2) %>%
+  tbl_summary(
+    by = wave_id,
+    type = gender ~ "dichotomous",
+    value = gender ~ "Male",
+    statistic = all_categorical() ~ "{n} ({p}%)",
+    sort = ethnicity_2 ~ "frequency",
+    label = list(gender ~ "Male", ethnicity_2 ~ "Ethnicity")
+  )
+
+#adding extra for readability
+variables_table <- variables_table %>%
+    modify_header(
+    label ~ "**Wave ID**",
+    all_stat_cols() ~ "**{level}** \nN = {n}"
+    ) %>%
+  as_kable_extra(
+    booktabs = TRUE, linesep = "",
+    caption = "Sex and ethnicity description of NHANES participants by wave"
+    ) %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down"))
+
+variables_table
+
+```
+
+Using the table above, we first observe a similar percentage of males for each wave, despite decreasing overall sample size of each wave.
+In addition to this, there seems to also be a general similarity of ethnicity proportion between waves.
+
+Considering that all three waves are relatively similar in sex proportions and in ethnicity diversity proportions, we will follow with a statistical description of the average Systolic Blood Pressure (SBP) for each wave.
+
+## Average SBP statistical summary per wave
+
+Below we find Table 2, presenting a summary of the average Systolic Blood Pressure per wave.
+
+```{r average SBP, echo = FALSE}
+# recreating average SBP because it had been created on a separate filtered dataset
+
+
+#creating one dataframe with all the SBP values 
+SBP_df <- data.frame (
+  SBP1 = cleaned_NHANES$systolic_bp_1,
+  SBP2 = cleaned_NHANES$systolic_bp_2,
+  SBP3 = cleaned_NHANES$systolic_bp_3,
+  SBP4 = cleaned_NHANES$systolic_bp_4
+)
+
+# making a SBP average, despite NA missing data
+SBP_average <- rowMeans(SBP_df, na.rm = TRUE)
+
+cleaned_NHANES <- cleaned_NHANES %>%
+  mutate(
+    SBP_average = SBP_average
+  )
+# Set SBP_mean to NA if all 4 values are missing
+cleaned_NHANES$SBP_average[
+  is.nan(cleaned_NHANES$SBP_average)] <- NA
+```
+
+```{r table2, echo = FALSE}
+SBP_table <- cleaned_NHANES %>%
+  select(wave_id, SBP_average) %>%
+  tbl_summary(
+    by = wave_id,
+    type = SBP_average ~ "continuous2",
+    statistic = SBP_average ~ c(
+      "{min}",
+      "{max}",
+      "{median}",
+      "{mean}",
+      "{sd}"
+    ),
+    digits = SBP_average ~ 1,
+    label = list(SBP_average ~ "Average Systolic Blood Pressure (mmHg)"),
+    missing = "ifany"
+  )
+
+## adding footnote:
+
+SBP_table <- SBP_table %>%
+    modify_header(
+    label ~ "**Wave ID**",
+    all_stat_cols() ~ "**{level}** \nN = {n}"
+    ) %>%
+  as_kable_extra(
+    booktabs = TRUE, linesep = "",
+    caption = "Average systolic blood pressure by wave") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down")) %>%
+  footnote(
+    general = "SD = standard deviation.",
+    general_title = "Note:",
+    footnote_as_chunk = TRUE
+  )
+
+SBP_table
+
+```
+
+The table above allows us to observe the evolution of the average SBP throughout time for the general population of the United-States.
+
+It is interesting to notice that, despite decrease of overall sample size and of missing values (see Unknown), there seems to be a **general increase** in the statistics of the average SBP.
+Indeed, we notice this by comparing values of each row for each survey cycle. In the span of 3 survey cycle (2014-2018):
+
+* Min: **augmented** from 64.7 to 72.7 **(+8)**
+* Max: **augmented** from 228.7 to 234.0 **(+5.3)**
+* Median: **augmented** from 115.3 to 118.0 **(+2.7)**
+* Mean: **augmented** from 118.3 to 121.7 **(+3.4)**
+* Standard deviation (SD): **augmented** from 18.1 to 20.3 **(+2.2)**
+
+Though this simple observation of data statistics is not complete enough to confirm this observed trend, let alone explain it, it is a first step to point out potential research that could further the understanding of this data.
+
+End
+
+
+# References
+
+
+
